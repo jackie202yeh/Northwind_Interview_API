@@ -66,9 +66,9 @@ namespace API.Controllers
             return result;
         }
 
-        // GET api/<ProductController>/chai
+        // GET api/<ProductController>/1
         [HttpGet("{id}")]
-        public IEnumerable<ProductsList> Get(int id)
+        public IEnumerable<ProductsList> GetById(int id)
         {
             var result =   from p in _northwindContext.Products
                            where p.ProductId == id
@@ -91,7 +91,7 @@ namespace API.Controllers
 
         // POST api/<ProductController>
         [HttpPost]
-        public string Post([FromBody] AddProduct value)
+        public IActionResult Post([FromBody] AddProduct value)
         {
             // 檢查SupplierID和CategoryID是否存在於資料庫中
             var existingSupplier = _northwindContext.Suppliers.FirstOrDefault(s => s.SupplierId == value.SupplierId);
@@ -99,11 +99,19 @@ namespace API.Controllers
 
             if (existingSupplier == null)
             {
-                return "供應商不存在";
+                var validationErrors = new
+                {
+                    Message = "供應商不存在！"
+                };
+                return UnprocessableEntity(validationErrors);
             }
             else if (existingCategory == null)
             {
-                return "類別不存在";
+                var validationErrors = new
+                {
+                    Message = "類別不存在！"
+                };
+                return UnprocessableEntity(validationErrors);
             }
             else
             {
@@ -124,22 +132,40 @@ namespace API.Controllers
                 
                 _northwindContext.Products.Add(New_Product);
                 _northwindContext.SaveChanges();
-
-                return "ok";
+                return Ok("完成，產品編號：" + New_Product.ProductId.ToString());
+                //return CreatedAtAction(nameof(GetById), new { id = New_Product.ProductId }, New_Product);
             }
         }
 
         // PUT api/<ProductController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        [HttpPut("ProductName/{id}")]
+        public void Put(int id, [FromBody] UpdateProduct value)
         {
-            
+            var update = (from p in _northwindContext.Products
+                          where p.ProductId == id
+                          select p).SingleOrDefault();
+
+            if (update != null)
+            {
+                update.ProductName = value.ProductName;
+                update.SupplierId = value.SupplierId;
+                update.CategoryId = value.CategoryId;
+                update.QuantityPerUnit = value.QuantityPerUnit;
+                update.UnitPrice = value.UnitPrice;
+                update.UnitsInStock = value.UnitsInStock;
+                update.UnitsOnOrder = value.UnitsOnOrder;
+                update.ReorderLevel = value.ReorderLevel;
+                update.Discontinued = value.Discontinued;
+                _northwindContext.SaveChanges();
+                //_northwindContext.;
+            }
         }
 
         // DELETE api/<ProductController>/5
         [HttpDelete("{id}")]
         public void Delete(int id)
         {
+
         }
     }
 }
