@@ -2,6 +2,7 @@
 using API.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -139,8 +140,12 @@ namespace API.Controllers
 
         // PUT api/<ProductController>/5
         [HttpPut("ProductName/{id}")]
-        public void Put(int id, [FromBody] UpdateProduct value)
+        public IActionResult Put(int id, [FromBody] UpdateProduct value)
         {
+            if (id != value.ProductId)
+            {
+                return BadRequest();
+            }
             var update = (from p in _northwindContext.Products
                           where p.ProductId == id
                           select p).SingleOrDefault();
@@ -159,13 +164,31 @@ namespace API.Controllers
                 _northwindContext.SaveChanges();
                 //_northwindContext.;
             }
+            else
+            {
+                return NotFound();
+            }
+
+            return NoContent();
         }
 
         // DELETE api/<ProductController>/5
         [HttpDelete("{id}")]
-        public void Delete(int id)
+        public IActionResult Delete(int id)
         {
-
+            var delete = (from p in _northwindContext.Products
+                          where p.ProductId == id
+                          select p).SingleOrDefault();
+            if (delete != null)
+            {
+                _northwindContext.Products.Remove(delete);
+                _northwindContext.SaveChanges();
+            }
+            else
+            {
+                return NotFound("找不到指定資源");
+            }
+            return NoContent();
         }
     }
 }
